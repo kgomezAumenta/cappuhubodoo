@@ -112,11 +112,11 @@ app.post('/webhook/orders/confirm', async (req, res) => {
 // Actualizar pedido tras pago (Confirmar orden y Facturar)
 app.post('/webhook/orders/update-payment', async (req, res) => {
     try {
-        const { order_id, payment_status } = req.body;
+        const { order_id, payment_status, method, transaction_id, amount } = req.body;
 
         if (payment_status === 'paid') {
             // 1. Obtener estado actual de la orden
-            const [order] = await odoo.searchRead('sale.order', [['id', '=', order_id]], ['state', 'invoice_status']);
+            const [order] = await odoo.searchRead('sale.order', [['id', '=', order_id]], ['state', 'name']);
 
             if (!order) {
                 return res.status(404).json({ success: false, error: 'Order not found' });
@@ -129,7 +129,7 @@ app.post('/webhook/orders/update-payment', async (req, res) => {
 
             // 3. Crear Factura usando el Wizard (sale.advance.payment.inv)
             // Esto es necesario porque _create_invoices es privado en XML-RPC
-            const [orderData] = await odoo.searchRead('sale.order', [['id', '=', order_id]], ['name']);
+            const [orderData] = [order]; // Reutilizamos los datos obtenidos
 
             const wizardId = await odoo.create('sale.advance.payment.inv', {
                 'advance_payment_method': 'delivered',
@@ -154,15 +154,29 @@ app.post('/webhook/orders/update-payment', async (req, res) => {
             if (invoices && invoices.length > 0) {
                 const draftInvoices = invoices.filter(inv => inv.state === 'draft').map(inv => inv.id);
 
+                // 5. Agregar nota de pago a las facturas (Log interno)
+                const paymentNote = `<b>Pago Recibido desde Hub:</b><br/>
+                                   Método: ${method || 'N/A'}<br/>
+                                   Transacción: ${transaction_id || 'N/A'}<br/>
+                                   Monto: ${amount || 'N/A'}`;
+
+                for (const invId of invoiceIds) {
+                    await odoo.execute('account.move', 'message_post', [[invId]], {
+                        body: paymentNote,
+                        message_type: 'notification',
+                        subtype_xmlid: 'mail.mt_note'
+                    });
+                }
+
                 if (draftInvoices.length > 0) {
-                    // 5. Validar/Publicar la factura (action_post)
+                    // 6. Validar/Publicar la factura (action_post)
                     await odoo.execute('account.move', 'action_post', [draftInvoices]);
                 }
 
                 res.json({
                     success: true,
-                    message: 'Order confirmed and Invoice processed',
-                    invoice_ids: invoices.map(inv => inv.id)
+                    message: 'Order confirmed, invoice created and payment logged',
+                    invoice_ids: invoiceIds
                 });
             } else {
                 res.json({

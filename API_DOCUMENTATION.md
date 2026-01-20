@@ -99,7 +99,10 @@ Confirms the order in Odoo and automatically generates/posts the invoice after p
 ```json
 {
   "order_id": 789,
-  "payment_status": "paid"
+  "payment_status": "paid",
+  "method": "Tarjeta de Crédito",
+  "transaction_id": "TXN_123456789",
+  "amount": 150.00
 }
 ```
 - **Response:** `{"success": true, "message": "Order confirmed and Invoice created/posted", "invoice_ids": [123]}`
