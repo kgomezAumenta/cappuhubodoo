@@ -64,6 +64,9 @@ Creates a quotation in Odoo.
 ```json
 {
   "partner_id": 123,
+  "street": "Optional: New Delivery Address",
+  "city": "Optional: City",
+  "zip": "Optional: Zip",
   "products": [
     {
       "product_id": 456,
@@ -72,6 +75,8 @@ Creates a quotation in Odoo.
   ]
 }
 ```
+> [!NOTE]
+> If `street`, `city`, or `zip` are provided, the system will automatically update the client's information before creating the order.
 - **Response:** `{"success": true, "id": order_id}`
 
 ### Confirm Order (Post-payment)

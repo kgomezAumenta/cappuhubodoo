@@ -66,8 +66,16 @@ app.post('/webhook/products/search', async (req, res) => {
 // Creación de pedidos
 app.post('/webhook/orders/create', async (req, res) => {
     try {
-        const { partner_id, products } = req.body;
-        // products: [{ product_id, quantity }]
+        const { partner_id, products, street, city, zip } = req.body;
+
+        // Si se envían datos de dirección, actualizamos el partner primero
+        if (street || city || zip) {
+            const updateData = {};
+            if (street) updateData.street = street;
+            if (city) updateData.city = city;
+            if (zip) updateData.zip = zip;
+            await odoo.write('res.partner', [partner_id], updateData);
+        }
 
         const orderLine = products.map(p => [0, 0, {
             product_id: p.product_id,
