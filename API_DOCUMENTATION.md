@@ -1,0 +1,95 @@
+# Odoo Hub API Documentation
+
+This Hub acts as a bridge between the WhatsApp BOT and Odoo.
+
+**Base URL:** `https://cappuhubodoo.vercel.app`
+
+---
+
+## 1. Clients (`res.partner`)
+
+### Search Client
+Finds clients by name or phone number.
+- **Endpoint:** `POST /webhook/clients/search`
+- **Body:**
+```json
+{
+  "query": "Name or Phone"
+}
+```
+- **Response:** `data` is an array of clients.
+
+### Create Client
+Registers a new client in Odoo.
+- **Endpoint:** `POST /webhook/clients/create`
+- **Body:**
+```json
+{
+  "name": "Full Name",
+  "phone": "123456789",
+  "email": "email@example.com"
+}
+```
+- **Response:** `{"success": true, "id": partner_id}`
+
+---
+
+## 2. Products (`product.product`)
+
+### Search Product
+Finds products by name or SKU (Internal Reference).
+- **Endpoint:** `POST /webhook/products/search`
+- **Body:**
+```json
+{
+  "query": "Americano%"
+}
+```
+> [!TIP]
+> Use `%` for wildcards (e.g., `Cafe%` finds anything starting with Cafe).
+
+- **Response:** `data` is an array of products with `id`, `name`, `default_code` (SKU), and `list_price`.
+
+---
+
+## 3. Orders (`sale.order`)
+
+### Create Sales Order
+Creates a quotation in Odoo.
+- **Endpoint:** `POST /webhook/orders/create`
+- **Body:**
+```json
+{
+  "partner_id": 123,
+  "products": [
+    {
+      "product_id": 456,
+      "quantity": 2
+    }
+  ]
+}
+```
+- **Response:** `{"success": true, "id": order_id}`
+
+### Confirm Order (Post-payment)
+Confirms the order in Odoo once payment is verified.
+- **Endpoint:** `POST /webhook/orders/update-payment`
+- **Body:**
+```json
+{
+  "order_id": 789,
+  "payment_status": "paid"
+}
+```
+- **Response:** `{"success": true, "message": "Order confirmed"}`
+
+---
+
+## Error Handling
+All responses include a `success` boolean. If `false`, an `error` field contains the message.
+```json
+{
+  "success": false,
+  "error": "Error description from Odoo"
+}
+```
