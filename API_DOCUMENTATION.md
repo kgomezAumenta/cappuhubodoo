@@ -99,7 +99,10 @@ Confirms the order in Odoo specifically after payment verification.
 ```json
 {
   "order_id": 789,
-  "payment_status": "paid"
+  "payment_status": "paid",
+  "transaction_id": "VISA-987654321",
+  "amount": 19.00,
+  "method": "Tarjeta de Crédito"
 }
 ```
 - **Response:** `{"success": true, "message": "Order confirmed"}`
