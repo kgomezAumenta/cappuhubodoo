@@ -127,12 +127,24 @@ app.post('/webhook/orders/update-payment', async (req, res) => {
                 await odoo.execute('sale.order', 'action_confirm', [[order_id]]);
             }
 
-            // 3. Crear Factura (si no existe una ya)
-            // En Odoo, action_create_invoices crea las facturas basadas en la configuración de la orden
-            const invoiceIds = await odoo.execute('sale.order', '_create_invoices', [[order_id]]);
+            // 3. Crear Factura usando el Wizard (sale.advance.payment.inv)
+            // Esto es necesario porque _create_invoices es privado en XML-RPC
+            // Obtenemos el nombre de la orden para buscar la factura luego
+            const [orderData] = await odoo.searchRead('sale.order', [['id', '=', order_id]], ['name']);
 
-            if (invoiceIds && invoiceIds.length > 0) {
-                // 4. Validar/Publicar la factura (action_post)
+            const wizardId = await odoo.create('sale.advance.payment.inv', {
+                'advance_payment_method': 'delivered',
+                'sale_order_ids': [[6, 0, [order_id]]]
+            });
+
+            await odoo.execute('sale.advance.payment.inv', 'create_invoices', [[wizardId]]);
+
+            // 4. Buscar la factura recién creada para publicarla
+            const invoices = await odoo.searchRead('account.move', [['invoice_origin', '=', orderData.name], ['state', '=', 'draft']], ['id']);
+
+            if (invoices && invoices.length > 0) {
+                const invoiceIds = invoices.map(inv => inv.id);
+                // 5. Validar/Publicar la factura (action_post)
                 await odoo.execute('account.move', 'action_post', [invoiceIds]);
                 res.json({
                     success: true,
@@ -142,7 +154,7 @@ app.post('/webhook/orders/update-payment', async (req, res) => {
             } else {
                 res.json({
                     success: true,
-                    message: 'Order confirmed (Invoice might already exist or not required)',
+                    message: 'Order confirmed (Invoice might already exist or handled by wizard)',
                     order_state: 'confirmed'
                 });
             }
