@@ -32,8 +32,15 @@ app.post('/webhook/clients/search', async (req, res) => {
 // Creación de clientes
 app.post('/webhook/clients/create', async (req, res) => {
     try {
-        const { name, phone, email } = req.body;
-        const clientId = await odoo.create('res.partner', { name, phone, email });
+        const { name, phone, email, street, city, zip } = req.body;
+        const clientId = await odoo.create('res.partner', {
+            name,
+            phone,
+            email,
+            street,
+            city,
+            zip
+        });
         res.json({ success: true, id: clientId });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });

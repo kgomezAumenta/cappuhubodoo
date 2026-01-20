@@ -27,7 +27,10 @@ Registers a new client in Odoo.
 {
   "name": "Full Name",
   "phone": "123456789",
-  "email": "email@example.com"
+  "email": "email@example.com",
+  "street": "Calle 123, Zona 10",
+  "city": "Guatemala",
+  "zip": "01010"
 }
 ```
 - **Response:** `{"success": true, "id": partner_id}`
