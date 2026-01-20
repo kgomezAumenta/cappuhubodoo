@@ -129,7 +129,6 @@ app.post('/webhook/orders/update-payment', async (req, res) => {
 
             // 3. Crear Factura usando el Wizard (sale.advance.payment.inv)
             // Esto es necesario porque _create_invoices es privado en XML-RPC
-            // Obtenemos el nombre de la orden para buscar la factura luego
             const [orderData] = await odoo.searchRead('sale.order', [['id', '=', order_id]], ['name']);
 
             const wizardId = await odoo.create('sale.advance.payment.inv', {
@@ -137,24 +136,38 @@ app.post('/webhook/orders/update-payment', async (req, res) => {
                 'sale_order_ids': [[6, 0, [order_id]]]
             });
 
-            await odoo.execute('sale.advance.payment.inv', 'create_invoices', [[wizardId]]);
+            try {
+                // Este método suele devolver un diccionario complejo con Nones que rompe el marshal de XML-RPC
+                // Pero a menudo la factura SÍ se crea antes del error de retorno
+                await odoo.execute('sale.advance.payment.inv', 'create_invoices', [[wizardId]]);
+            } catch (rpcError) {
+                // Si el error es por marshalling (None/Null), lo ignoramos si la factura se creó
+                if (!rpcError.message.includes('cannot marshal None')) {
+                    throw rpcError;
+                }
+                console.log('Ignorando error de marshalling en Odoo, verificando si se creó la factura...');
+            }
 
-            // 4. Buscar la factura recién creada para publicarla
-            const invoices = await odoo.searchRead('account.move', [['invoice_origin', '=', orderData.name], ['state', '=', 'draft']], ['id']);
+            // 4. Buscar la factura recién creada (puede estar en draft)
+            const invoices = await odoo.searchRead('account.move', [['invoice_origin', '=', orderData.name]], ['id', 'state']);
 
             if (invoices && invoices.length > 0) {
-                const invoiceIds = invoices.map(inv => inv.id);
-                // 5. Validar/Publicar la factura (action_post)
-                await odoo.execute('account.move', 'action_post', [invoiceIds]);
+                const draftInvoices = invoices.filter(inv => inv.state === 'draft').map(inv => inv.id);
+
+                if (draftInvoices.length > 0) {
+                    // 5. Validar/Publicar la factura (action_post)
+                    await odoo.execute('account.move', 'action_post', [draftInvoices]);
+                }
+
                 res.json({
                     success: true,
-                    message: 'Order confirmed and Invoice created/posted',
-                    invoice_ids: invoiceIds
+                    message: 'Order confirmed and Invoice processed',
+                    invoice_ids: invoices.map(inv => inv.id)
                 });
             } else {
                 res.json({
                     success: true,
-                    message: 'Order confirmed (Invoice might already exist or handled by wizard)',
+                    message: 'Order confirmed (Invoice already processed or not generated)',
                     order_state: 'confirmed'
                 });
             }
