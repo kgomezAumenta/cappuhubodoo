@@ -92,20 +92,17 @@ Explicitly confirms an existing order.
 ```
 - **Response:** `{"success": true, "message": "Order confirmed"}`
 
-### Confirm Order via Payment
-Confirms the order in Odoo specifically after payment verification.
+### Confirm Order & Create Invoice via Payment
+Confirms the order in Odoo and automatically generates/posts the invoice after payment verification.
 - **Endpoint:** `POST /webhook/orders/update-payment`
 - **Body:**
 ```json
 {
   "order_id": 789,
-  "payment_status": "paid",
-  "transaction_id": "VISA-987654321",
-  "amount": 19.00,
-  "method": "Tarjeta de Crédito"
+  "payment_status": "paid"
 }
 ```
-- **Response:** `{"success": true, "message": "Order confirmed"}`
+- **Response:** `{"success": true, "message": "Order confirmed and Invoice created/posted", "invoice_ids": [123]}`
 
 ---
 

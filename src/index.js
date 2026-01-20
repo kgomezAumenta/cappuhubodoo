@@ -109,15 +109,43 @@ app.post('/webhook/orders/confirm', async (req, res) => {
     }
 });
 
-// Actualizar pedido tras pago (Confirmar orden)
+// Actualizar pedido tras pago (Confirmar orden y Facturar)
 app.post('/webhook/orders/update-payment', async (req, res) => {
     try {
         const { order_id, payment_status } = req.body;
 
         if (payment_status === 'paid') {
-            // Confirmar la orden en Odoo
-            await odoo.execute('sale.order', 'action_confirm', [[order_id]]);
-            res.json({ success: true, message: 'Order confirmed' });
+            // 1. Obtener estado actual de la orden
+            const [order] = await odoo.searchRead('sale.order', [['id', '=', order_id]], ['state', 'invoice_status']);
+
+            if (!order) {
+                return res.status(404).json({ success: false, error: 'Order not found' });
+            }
+
+            // 2. Confirmar si está en borrador
+            if (['draft', 'sent'].includes(order.state)) {
+                await odoo.execute('sale.order', 'action_confirm', [[order_id]]);
+            }
+
+            // 3. Crear Factura (si no existe una ya)
+            // En Odoo, action_create_invoices crea las facturas basadas en la configuración de la orden
+            const invoiceIds = await odoo.execute('sale.order', '_create_invoices', [[order_id]]);
+
+            if (invoiceIds && invoiceIds.length > 0) {
+                // 4. Validar/Publicar la factura (action_post)
+                await odoo.execute('account.move', 'action_post', [invoiceIds]);
+                res.json({
+                    success: true,
+                    message: 'Order confirmed and Invoice created/posted',
+                    invoice_ids: invoiceIds
+                });
+            } else {
+                res.json({
+                    success: true,
+                    message: 'Order confirmed (Invoice might already exist or not required)',
+                    order_state: 'confirmed'
+                });
+            }
         } else {
             res.json({ success: false, message: 'Payment not completed' });
         }
