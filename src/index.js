@@ -66,7 +66,7 @@ app.post('/webhook/products/search', async (req, res) => {
 // Creación de pedidos
 app.post('/webhook/orders/create', async (req, res) => {
     try {
-        const { partner_id, products, street, city, zip } = req.body;
+        const { partner_id, products, street, city, zip, confirm } = req.body;
 
         // Si se envían datos de dirección, actualizamos el partner primero
         if (street || city || zip) {
@@ -87,7 +87,23 @@ app.post('/webhook/orders/create', async (req, res) => {
             order_line: orderLine
         });
 
-        res.json({ success: true, id: orderId });
+        // Si se solicita confirmación inmediata
+        if (confirm === true) {
+            await odoo.execute('sale.order', 'action_confirm', [[orderId]]);
+        }
+
+        res.json({ success: true, id: orderId, confirmed: confirm || false });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Confirmar pedido (manual)
+app.post('/webhook/orders/confirm', async (req, res) => {
+    try {
+        const { order_id } = req.body;
+        await odoo.execute('sale.order', 'action_confirm', [[order_id]]);
+        res.json({ success: true, message: 'Order confirmed' });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

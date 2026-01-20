@@ -67,6 +67,7 @@ Creates a quotation in Odoo.
   "street": "Optional: New Delivery Address",
   "city": "Optional: City",
   "zip": "Optional: Zip",
+  "confirm": true,
   "products": [
     {
       "product_id": 456,
@@ -76,11 +77,23 @@ Creates a quotation in Odoo.
 }
 ```
 > [!NOTE]
+> If `confirm` is `true`, the order will be automatically confirmed (moved from Quotation to Sale Order).
 > If `street`, `city`, or `zip` are provided, the system will automatically update the client's information before creating the order.
-- **Response:** `{"success": true, "id": order_id}`
+- **Response:** `{"success": true, "id": order_id, "confirmed": true}`
 
-### Confirm Order (Post-payment)
-Confirms the order in Odoo once payment is verified.
+### Confirm Sales Order
+Explicitly confirms an existing order.
+- **Endpoint:** `POST /webhook/orders/confirm`
+- **Body:**
+```json
+{
+  "order_id": 789
+}
+```
+- **Response:** `{"success": true, "message": "Order confirmed"}`
+
+### Confirm Order via Payment
+Confirms the order in Odoo specifically after payment verification.
 - **Endpoint:** `POST /webhook/orders/update-payment`
 - **Body:**
 ```json
