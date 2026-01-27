@@ -11,19 +11,20 @@ router.post('/webhook/payment', async (req, res) => {
 
         // Extract key fields for structured storage
         // Using optional chaining to be safe, defaulting to null if missing
-        const paymentId = payload.id;
+        // User requested to use checkout.id as the primary identifier
+        const paymentId = payload.checkout ? payload.checkout.id : payload.id;
         const amountInCents = payload.amount_in_cents;
         const currency = payload.currency;
         const eventType = payload.event_type;
         const status = payload.checkout ? payload.checkout.status : null;
 
         if (!paymentId) {
-            return res.status(400).json({ success: false, error: 'Missing payment ID in payload' });
+            return res.status(400).json({ success: false, error: 'Missing checkout ID in payload' });
         }
 
         const { error } = await supabase
             .from('webhook_payments')
-            .insert({
+            .upsert({
                 id: paymentId,
                 amount_in_cents: amountInCents,
                 currency: currency,

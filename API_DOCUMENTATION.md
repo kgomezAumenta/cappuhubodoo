@@ -122,7 +122,7 @@ Endpoint to receive payment notifications from the payment gateway.
 ### Retrieve Payment
 Get the stored payment data by its ID.
 - **Endpoint:** `GET /api/payment/:id`
-- **Example:** `GET /api/payment/pa_hl6jmewm`
+- **Example:** `GET /api/payment/ch_r6wjdigrt0jzyzcw`
 - **Response:** `{"success": true, "data": { ...payment_payload }}`
 
 ---

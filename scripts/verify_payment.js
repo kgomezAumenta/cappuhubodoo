@@ -111,7 +111,7 @@ const payload = {
     "vat_withheld_currency": "GTQ"
 };
 
-const PAYMENT_ID = payload.id; // pa_hl6jmewm
+const PAYMENT_ID = payload.checkout.id; // ch_r6wjdigrt0jzyzcw (was pa_hl6jmewm)
 
 function request(method, path, data) {
     return new Promise((resolve, reject) => {
