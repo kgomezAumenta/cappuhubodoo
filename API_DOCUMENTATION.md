@@ -109,6 +109,24 @@ Confirms the order in Odoo and automatically generates/posts the invoice after p
 
 ---
 
+---
+
+## 4. Payments (Webhooks)
+
+### Receive Payment Webhook
+Endpoint to receive payment notifications from the payment gateway.
+- **Endpoint:** `POST /webhook/payment`
+- **Body:** JSON payload from the payment provider.
+- **Response:** `{"success": true, "message": "Payment recorded"}`
+
+### Retrieve Payment
+Get the stored payment data by its ID.
+- **Endpoint:** `GET /api/payment/:id`
+- **Example:** `GET /api/payment/pa_hl6jmewm`
+- **Response:** `{"success": true, "data": { ...payment_payload }}`
+
+---
+
 ## Error Handling
 All responses include a `success` boolean. If `false`, an `error` field contains the message.
 ```json

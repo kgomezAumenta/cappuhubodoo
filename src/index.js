@@ -15,6 +15,9 @@ const odoo = new OdooClient(
 
 const PORT = process.env.PORT || 3000;
 
+const paymentRoutes = require('./routes/payments');
+app.use(paymentRoutes);
+
 // --- Webhook: Clients ---
 
 // Búsqueda de clientes por nombre o teléfono
