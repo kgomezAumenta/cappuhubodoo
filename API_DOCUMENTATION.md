@@ -125,6 +125,19 @@ Get the stored payment data by its ID.
 - **Example:** `GET /api/payment/ch_r6wjdigrt0jzyzcw`
 - **Response:** `{"success": true, "data": { ...payment_payload }}`
 
+### Check Payment Status
+Checks if a payment is marked as "paid".
+- **Endpoint:** `GET /api/payment/:id/status`
+- **Example:** `GET /api/payment/ch_r6wjdigrt0jzyzcw/status`
+- **Response:** 
+```json
+{
+  "success": true, 
+  "paid": true, 
+  "status": "paid" 
+}
+```
+
 ---
 
 ## Error Handling

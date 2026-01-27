@@ -65,4 +65,31 @@ router.get('/api/payment/:id', async (req, res) => {
     }
 });
 
+// Check payment status by ID
+router.get('/api/payment/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { data, error } = await supabase
+            .from('webhook_payments')
+            .select('status')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            return res.status(404).json({ success: false, error: 'Payment not found or error retrieving' });
+        }
+
+        const isPaid = data.status === 'paid';
+
+        res.json({
+            success: true,
+            paid: isPaid,
+            status: data.status
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;

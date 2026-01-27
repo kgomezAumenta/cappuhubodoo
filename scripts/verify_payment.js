@@ -175,10 +175,28 @@ async function runTest() {
             process.exit(1);
         }
 
-        if (getRes.body.data.id === PAYMENT_ID) {
+        if (getRes.body.data.checkout.id === PAYMENT_ID) {
             console.log('\nSUCCESS: Retrieved payment matches injected payment.');
         } else {
             console.error('\nFAILED: Retrieved payment ID does not match.');
+            console.error(`Expected: ${PAYMENT_ID}, Got: ${getRes.body.data.checkout.id}`);
+            process.exit(1);
+        }
+
+        // 3. Check Payment Status
+        console.log(`\n3. Checking Payment Status GET from /api/payment/${PAYMENT_ID}/status...`);
+        const statusRes = await request('GET', `/api/payment/${PAYMENT_ID}/status`);
+        console.log(`Response: ${statusRes.status}`, JSON.stringify(statusRes.body, null, 2));
+
+        if (statusRes.status !== 200 || !statusRes.body.success) {
+            console.error('FAILED: Status API failed.');
+            process.exit(1);
+        }
+
+        if (statusRes.body.paid === true) {
+            console.log('\nSUCCESS: Payment status is PAID.');
+        } else {
+            console.error('\nFAILED: Payment status is NOT PAID.');
             process.exit(1);
         }
 
